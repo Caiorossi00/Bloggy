@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bloggy</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Bloggy</h1>
+    <form id="postForm">
+      <label for="title">Título:</label><br />
+      <input type="text" id="title" name="title" required /><br /><br />
+
+      <label for="content">Conteúdo:</label><br />
+      <textarea id="content" name="content" required></textarea><br /><br />
+
+      <button type="submit">Enviar</button>
+    </form>
+
+    <h2>Postagens</h2>
+    <div id="postsContainer"></div>
+
+    <script>
+      document
+        .getElementById("postForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const title = document.getElementById("title").value;
+          const content = document.getElementById("content").value;
+
+          try {
+            const response = await fetch("http://localhost:3000/posts", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ title, content }),
+            });
+
+            if (response.ok) {
+              const newPost = await response.json();
+              displayPost(newPost);
+              alert("Postagem criada com sucesso!");
+            } else {
+              alert("Erro ao criar a postagem.");
+            }
+          } catch (error) {
+            alert("Erro ao conectar com o servidor.");
+          }
+        });
+
+      function displayPost(post) {
+        const postsContainer = document.getElementById("postsContainer");
+        const postElement = document.createElement("div");
+        postElement.classList.add("post");
+
+        postElement.innerHTML = `
+          <h3>${post.title}</h3>
+          <p>${post.content}</p>
+          <small>${new Date(post.date).toLocaleString()}</small>
+          <button onclick="deletePost('${post._id}')">Excluir</button>
+        `;
+
+        postsContainer.prepend(postElement);
+      }
+
+      async function loadPosts() {
+        try {
+          const response = await fetch("http://localhost:3000/posts");
+          const posts = await response.json();
+          posts.forEach(displayPost);
+        } catch (error) {
+          console.error("Erro ao carregar postagens:", error);
+        }
+      }
+
+      async function deletePost(postId) {
+        try {
+          const response = await fetch(
+            `http://localhost:3000/posts/${postId}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (response.ok) {
+            document
+              .querySelector(`.post button[onclick="deletePost('${postId}')"]`)
+              .parentElement.remove();
+            alert("Postagem excluída com sucesso!");
+          } else {
+            alert("Erro ao excluir a postagem.");
+          }
+        } catch (error) {
+          alert("Erro ao conectar com o servidor.");
+        }
+      }
+
+      loadPosts();
+    </script>
+  </body>
+</html>
